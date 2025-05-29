@@ -4,6 +4,8 @@ pipeline {
     environment {
         PATH = "${PATH}:${getTerraformPath()}"
         TERRAFORM_DIR = "Full-deployment"
+        // Define RUNNER variable to prevent null pointer exceptions
+        RUNNER = "${currentBuild.getBuildCauses()[0].userId ?: 'System'}"
     }
     
     stages {
@@ -26,7 +28,8 @@ pipeline {
                 slackSend(
                     channel: '#stackjenkins',
                     color: 'FFFF00_1',
-                    message: "Terraform init started by ${env.RUNNER} on job ${env.JOB_NAME} [${env.BUILD_NUMBER}]."
+                    message: "Terraform init started by ${env.RUNNER} on job ${env.JOB_NAME} [${env.BUILD_NUMBER}].",
+                    tokenCredentialId: 'Stack_API_Token'
                 )
                 sh """
                     cd ${TERRAFORM_DIR}
@@ -41,7 +44,8 @@ pipeline {
                     slackSend(
                         channel: '#stackjenkins',
                         color: 'FFFF00_1',
-                        message: "Terraform plan started by ${env.RUNNER}'s on job ${env.JOB_NAME} [${env.BUILD_NUMBER}]."
+                        message: "Terraform plan started by ${env.RUNNER} on job ${env.JOB_NAME} [${env.BUILD_NUMBER}].",
+                        tokenCredentialId: 'Stack_API_Token'
                     )
                     sh """
                         cd ${TERRAFORM_DIR}
@@ -53,11 +57,12 @@ pipeline {
 
         stage('Terraform Apply') {
             steps {
-                withCredentials([file(credentialsId: 'clixxx-tfvars', variable: 'TFVARS_FILE')]) {
+                withCredentials([file(credentialsId: 'clixx-tfvars', variable: 'TFVARS_FILE')]) { 
                     slackSend(
                         channel: '#stackjenkins',
                         color: '36A64F_1',
-                        message: "Terraform apply started by ${env.RUNNER}'s on job ${env.JOB_NAME} [${env.BUILD_NUMBER}]."
+                        message: "Terraform apply started by ${env.RUNNER} on job ${env.JOB_NAME} [${env.BUILD_NUMBER}].",
+                        tokenCredentialId: 'Stack_API_Token'
                     )
                     sh """
                         cd ${TERRAFORM_DIR}
@@ -87,7 +92,8 @@ pipeline {
                     slackSend(
                         channel: '#stackjenkins',
                         color: 'FF0000_1',
-                        message: "Terraform destroy started on job ${env.JOB_NAME} [${env.BUILD_NUMBER}]."
+                        message: "Terraform destroy started on job ${env.JOB_NAME} [${env.BUILD_NUMBER}].",
+                        tokenCredentialId: 'Stack_API_Token'
                     )
                     sh """
                         cd ${TERRAFORM_DIR}
@@ -103,7 +109,8 @@ pipeline {
             slackSend(
                 channel: '#stackjenkins',
                 color: 'good',
-                message: "Terraform deployment completed successfully. Job: ${env.JOB_NAME}, Build: #${env.BUILD_NUMBER}."
+                message: "Terraform deployment completed successfully. Job: ${env.JOB_NAME}, Build: #${env.BUILD_NUMBER}.",
+                tokenCredentialId: 'Stack_API_Token'
             )
             echo "Deployment successful."
         }
@@ -111,7 +118,8 @@ pipeline {
             slackSend(
                 channel: '#stackjenkins',
                 color: 'danger',
-                message: "Terraform deployment failed. Job: ${env.JOB_NAME}, Build: #${env.BUILD_NUMBER}. Check logs for details."
+                message: "Terraform deployment failed. Job: ${env.JOB_NAME}, Build: #${env.BUILD_NUMBER}. Check logs for details.",
+                tokenCredentialId: 'Stack_API_Token'
             )
             echo "Deployment failed. Check logs."
         }
@@ -121,13 +129,15 @@ pipeline {
                     slackSend(
                         channel: '#stackjenkins',
                         color: 'good',
-                        message: "Terraform destroy completed successfully. Job: ${env.JOB_NAME}, Build: #${env.BUILD_NUMBER}."
+                        message: "Terraform destroy completed successfully. Job: ${env.JOB_NAME}, Build: #${env.BUILD_NUMBER}.",
+                        tokenCredentialId: 'Stack_API_Token'
                     )
                 } else if (currentBuild.currentResult == 'FAILURE' && env.STAGE_NAME == 'Terraform Destroy') {
                     slackSend(
                         channel: '#stackjenkins',
                         color: 'danger',
-                        message: "Terraform destroy failed. Job: ${env.JOB_NAME}, Build: #${env.BUILD_NUMBER}."
+                        message: "Terraform destroy failed. Job: ${env.JOB_NAME}, Build: #${env.BUILD_NUMBER}.",
+                        tokenCredentialId: 'Stack_API_Token'
                     )
                 }
             }
@@ -136,5 +146,10 @@ pipeline {
 }
 
 def getTerraformPath() {
-    return tool(name: 'terraform-14', type: 'terraform')
+    // Try to use the named terraform tool, or fall back to the system path
+    try {
+        return tool(name: 'terraform-14', type: 'terraform')  // Changed back to match your configured tool name
+    } catch (Exception e) {
+        return "/usr/local/bin"
+    }
 }
