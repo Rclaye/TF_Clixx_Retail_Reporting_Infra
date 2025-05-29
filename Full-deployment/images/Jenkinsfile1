@@ -26,7 +26,7 @@ pipeline {
                 slackSend(
                     channel: '#stackjenkins',
                     color: 'FFFF00_1',
-                    message: "Terraform init started by ${env.RUNNER}'s on job ${env.JOB_NAME} [${env.BUILD_NUMBER}]."
+                    message: "Terraform init started by ${env.RUNNER} on job ${env.JOB_NAME} [${env.BUILD_NUMBER}]."
                 )
                 sh """
                     cd ${TERRAFORM_DIR}
