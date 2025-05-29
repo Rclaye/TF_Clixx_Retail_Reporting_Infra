@@ -1,0 +1,140 @@
+pipeline {
+    agent any
+
+    environment {
+        PATH = "${PATH}:${getTerraformPath()}"
+        TERRAFORM_DIR = "Full-deployment"
+    }
+    
+    stages {
+        stage('Approval to Launch Pipeline') {
+            steps {
+                script {
+                    input(
+                        id: 'start_confirm',
+                        message: 'Ready to Launch the Pipeline?',
+                        parameters: [
+                            [$class: 'BooleanParameterDefinition', defaultValue: false, description: 'Start the Pipeline?', name: 'confirm']
+                        ]
+                    )
+                }
+            }
+        }
+
+        stage('Terraform Init') {
+            steps {
+                slackSend(
+                    channel: '#stackjenkins',
+                    color: 'FFFF00_1',
+                    message: "Terraform init started by ${env.RUNNER} on job ${env.JOB_NAME} [${env.BUILD_NUMBER}]."
+                )
+                sh """
+                    cd ${TERRAFORM_DIR}
+                    terraform init -migrate-state
+                """
+            }
+        }
+
+        stage('Terraform Plan') {
+            steps {
+                withCredentials([file(credentialsId: 'clixxx-tfvars', variable: 'TFVARS_FILE')]) {
+                    slackSend(
+                        channel: '#stackjenkins',
+                        color: 'FFFF00_1',
+                        message: "Terraform plan started by ${env.RUNNER} on job ${env.JOB_NAME} [${env.BUILD_NUMBER}]."
+                    )
+                    sh """
+                        cd ${TERRAFORM_DIR}
+                        terraform plan -var-file="\$TFVARS_FILE" -out=tfplan -input=false
+                    """
+                }
+            }
+        }
+
+        stage('Terraform Apply') {
+            steps {
+                withCredentials([file(credentialsId: 'clixxx-tfvars', variable: 'TFVARS_FILE')]) {
+                    slackSend(
+                        channel: '#stackjenkins',
+                        color: '36A64F_1',
+                        message: "Terraform apply started by ${env.RUNNER}'s on job ${env.JOB_NAME} [${env.BUILD_NUMBER}]."
+                    )
+                    sh """
+                        cd ${TERRAFORM_DIR}
+                        terraform apply -var-file="\$TFVARS_FILE" -input=false tfplan
+                    """
+                }
+            }
+        }
+
+        stage('Approval to Destroy Infrastructure') {
+            steps {
+                script {
+                    input(
+                        id: 'destroy_confirm',
+                        message: 'Do you want to destroy this environment?',
+                        parameters: [
+                            [$class: 'BooleanParameterDefinition', defaultValue: false, description: 'Run terraform destroy?', name: 'confirm']
+                        ]
+                    )
+                }
+            }
+        }
+
+        stage('Terraform Destroy') {
+            steps {
+                withCredentials([file(credentialsId: 'clixxx-tfvars', variable: 'TFVARS_FILE')]) {
+                    slackSend(
+                        channel: '#stackjenkins',
+                        color: 'FF0000_1',
+                        message: "Terraform destroy started on job ${env.JOB_NAME} [${env.BUILD_NUMBER}]."
+                    )
+                    sh """
+                        cd ${TERRAFORM_DIR}
+                        terraform destroy -var-file="\$TFVARS_FILE" -auto-approve
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            slackSend(
+                channel: '#stackjenkins',
+                color: 'good',
+                message: "Terraform deployment completed successfully. Job: ${env.JOB_NAME}, Build: #${env.BUILD_NUMBER}."
+            )
+            echo "Deployment successful."
+        }
+        failure {
+            slackSend(
+                channel: '#stackjenkins',
+                color: 'danger',
+                message: "Terraform deployment failed. Job: ${env.JOB_NAME}, Build: #${env.BUILD_NUMBER}. Check logs for details."
+            )
+            echo "Deployment failed. Check logs."
+        }
+        always {
+            script {
+                if (currentBuild.currentResult == 'SUCCESS' && env.STAGE_NAME == 'Terraform Destroy') {
+                    slackSend(
+                        channel: '#stackjenkins',
+                        color: 'good',
+                        message: "Terraform destroy completed successfully. Job: ${env.JOB_NAME}, Build: #${env.BUILD_NUMBER}."
+                    )
+                } else if (currentBuild.currentResult == 'FAILURE' && env.STAGE_NAME == 'Terraform Destroy') {
+                    slackSend(
+                        channel: '#stackjenkins',
+                        color: 'danger',
+                        message: "Terraform destroy failed. Job: ${env.JOB_NAME}, Build: #${env.BUILD_NUMBER}."
+                    )
+                }
+            }
+        }
+    }
+}
+
+def getTerraformPath() {
+    return tool(name: 'terraform-14', type: 'terraform')
+}
