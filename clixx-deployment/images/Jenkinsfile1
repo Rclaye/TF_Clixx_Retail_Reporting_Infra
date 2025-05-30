@@ -121,7 +121,7 @@ pipeline {
                     slackSend(
                         channel: '#stackjenkins',
                         color: 'good',
-                        message: "Terraform destroy completed successfully. Job: ${env.JOB_NAME}, Build: #${env.BUILD_NUMBER}."
+                        message: "Terraform destroy completed successfully by ${env.RUNNER}. Job: ${env.JOB_NAME}, Build: #${env.BUILD_NUMBER}."
                     )
                 } else if (currentBuild.currentResult == 'FAILURE' && env.STAGE_NAME == 'Terraform Destroy') {
                     slackSend(
