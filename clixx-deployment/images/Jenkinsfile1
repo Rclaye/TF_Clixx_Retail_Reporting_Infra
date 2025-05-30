@@ -4,7 +4,6 @@ pipeline {
     environment {
         PATH = "${PATH}:${getTerraformPath()}"
         TERRAFORM_DIR = "Full-deployment"
-        RUNNER = "${currentBuild.getBuildCauses()[0].userName ?: 'System'}"
     }
     
     stages {
@@ -27,7 +26,7 @@ pipeline {
                 slackSend(
                     channel: '#stackjenkins',
                     color: 'FFFF00_1',
-                    message: "Terraform init started by ${env.RUNNER} on job ${env.JOB_NAME} [${env.BUILD_NUMBER}]."
+                    message: "Terraform init started by ${env.RUNNER}'s on job ${env.JOB_NAME} [${env.BUILD_NUMBER}]."
                 )
                 sh """
                     cd ${TERRAFORM_DIR}
@@ -42,7 +41,7 @@ pipeline {
                     slackSend(
                         channel: '#stackjenkins',
                         color: 'FFFF00_1',
-                        message: "Terraform plan started by ${env.RUNNER} on job ${env.JOB_NAME} [${env.BUILD_NUMBER}]."
+                        message: "Terraform plan started by ${env.RUNNER}'s on job ${env.JOB_NAME} [${env.BUILD_NUMBER}]."
                     )
                     sh """
                         cd ${TERRAFORM_DIR}
@@ -58,7 +57,7 @@ pipeline {
                     slackSend(
                         channel: '#stackjenkins',
                         color: '36A64F_1',
-                        message: "Terraform apply started by ${env.RUNNER} on job ${env.JOB_NAME} [${env.BUILD_NUMBER}]."
+                        message: "Terraform apply started by ${env.RUNNER}'s on job ${env.JOB_NAME} [${env.BUILD_NUMBER}]."
                     )
                     sh """
                         cd ${TERRAFORM_DIR}
@@ -88,7 +87,7 @@ pipeline {
                     slackSend(
                         channel: '#stackjenkins',
                         color: 'FF0000_1',
-                        message: "Terraform destroy started by ${env.RUNNER} on job ${env.JOB_NAME} [${env.BUILD_NUMBER}]."
+                        message: "Terraform destroy started by ${env.RUNNER}'s on job ${env.JOB_NAME} [${env.BUILD_NUMBER}]."
                     )
                     sh """
                         cd ${TERRAFORM_DIR}
