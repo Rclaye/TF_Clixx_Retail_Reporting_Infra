@@ -87,7 +87,7 @@ pipeline {
                     slackSend(
                         channel: '#stackjenkins',
                         color: 'FF0000_1',
-                        message: "Terraform destroy started on job ${env.JOB_NAME} [${env.BUILD_NUMBER}]."
+                        message: "Terraform destroy started on ${env.RUNNER}'s ${env.JOB_NAME} [${env.BUILD_NUMBER}]."
                     )
                     sh """
                         cd ${TERRAFORM_DIR}
@@ -103,7 +103,7 @@ pipeline {
             slackSend(
                 channel: '#stackjenkins',
                 color: 'good',
-                message: "Terraform deployment completed successfully. Job: ${env.JOB_NAME}, Build: #${env.BUILD_NUMBER}."
+                message: "Terraform deployment completed successfully by ${env.RUNNER}. Job: ${env.JOB_NAME}, Build: #${env.BUILD_NUMBER}."
             )
             echo "Deployment successful."
         }
@@ -111,7 +111,7 @@ pipeline {
             slackSend(
                 channel: '#stackjenkins',
                 color: 'danger',
-                message: "Terraform deployment failed. Job: ${env.JOB_NAME}, Build: #${env.BUILD_NUMBER}. Check logs for details."
+                message: "Terraform deployment failed by ${env.RUNNER}. Job: ${env.JOB_NAME}, Build: #${env.BUILD_NUMBER}. Check logs for details."
             )
             echo "Deployment failed. Check logs."
         }
