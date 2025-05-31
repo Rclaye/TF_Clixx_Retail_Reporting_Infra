@@ -25,23 +25,31 @@ pipeline {
             steps {
                 slackSend(
                     channel: '#stackjenkins',
-                    color: 'FFFF00_1',
-                    message: "Terraform init started by RCLAYE's on job ${env.JOB_NAME} [${env.BUILD_NUMBER}]."
+                    color: '#3498DB',
+                    message: """⚙️ *TERRAFORM INIT* ⚙️
+▶️ Status: *Started*
+👨‍💻 Engineer: *RCLAYE*
+📋 Job: ${env.JOB_NAME} [${env.BUILD_NUMBER}]
+🕐 Time: ${new Date().format("HH:mm:ss")}"""
                 )
                 sh """
                     cd ${TERRAFORM_DIR}
-                    terraform init
+                    terraform init -migrate-state
                 """
             }
         }
 
         stage('Terraform Plan') {
             steps {
-                withCredentials([file(credentialsId: 'clixx-tfvars', variable: 'TFVARS_FILE')]) {
+                withCredentials([file(credentialsId: 'clixxx-tfvars', variable: 'TFVARS_FILE')]) {
                     slackSend(
                         channel: '#stackjenkins',
-                        color: 'FFFF00_1',
-                        message: "Terraform plan started by RCLAYE's on job ${env.JOB_NAME} [${env.BUILD_NUMBER}]."
+                        color: '#F39C12',
+                        message: """📝 *TERRAFORM PLAN* 📝
+▶️ Status: *Started*
+👨‍💻 Engineer: *RCLAYE*
+📋 Job: ${env.JOB_NAME} [${env.BUILD_NUMBER}]
+🕐 Time: ${new Date().format("HH:mm:ss")}"""
                     )
                     sh """
                         cd ${TERRAFORM_DIR}
@@ -53,11 +61,15 @@ pipeline {
 
         stage('Terraform Apply') {
             steps {
-                withCredentials([file(credentialsId: 'clixx-tfvars', variable: 'TFVARS_FILE')]) { 
+                withCredentials([file(credentialsId: 'clixxx-tfvars', variable: 'TFVARS_FILE')]) { 
                     slackSend(
                         channel: '#stackjenkins',
-                        color: '36A64F_1',
-                        message: "Terraform apply started by RCLAYE's on job ${env.JOB_NAME} [${env.BUILD_NUMBER}]."
+                        color: '#2ECC71',
+                        message: """🚀 *TERRAFORM APPLY* 🚀
+▶️ Status: *Started*
+👨‍💻 Engineer: *RCLAYE*
+📋 Job: ${env.JOB_NAME} [${env.BUILD_NUMBER}]
+🕐 Time: ${new Date().format("HH:mm:ss")}"""
                     )
                     sh """
                         cd ${TERRAFORM_DIR}
@@ -83,11 +95,16 @@ pipeline {
 
         stage('Terraform Destroy') {
             steps {
-                withCredentials([file(credentialsId: 'clixx-tfvars', variable: 'TFVARS_FILE')]) {
+                withCredentials([file(credentialsId: 'clixxx-tfvars', variable: 'TFVARS_FILE')]) {
                     slackSend(
                         channel: '#stackjenkins',
-                        color: 'FF0000_1',
-                        message: "Terraform destroy started by RCLAYE's on job ${env.JOB_NAME} [${env.BUILD_NUMBER}]."
+                        color: '#E74C3C',
+                        message: """💥 *TERRAFORM DESTROY* 💥
+▶️ Status: *Started*
+👨‍💻 Engineer: *RCLAYE*
+📋 Job: ${env.JOB_NAME} [${env.BUILD_NUMBER}]
+🕐 Time: ${new Date().format("HH:mm:ss")}
+⚠️ *Removing Infrastructure* ⚠️"""
                     )
                     sh """
                         cd ${TERRAFORM_DIR}
@@ -102,16 +119,25 @@ pipeline {
         success {
             slackSend(
                 channel: '#stackjenkins',
-                color: 'good',
-                message: "Terraform deployment completed successfully by RCLAYE. Job: ${env.JOB_NAME}, Build: #${env.BUILD_NUMBER}."
+                color: '#2ECC71',
+                message: """✅ *TERRAFORM SUCCESS* ✅
+👨‍💻 Engineer: *RCLAYE*
+📋 Job: ${env.JOB_NAME} [${env.BUILD_NUMBER}]
+🕐 Time: ${new Date().format("HH:mm:ss")}
+🏁 Status: *Completed Successfully*"""
             )
             echo "Deployment successful."
         }
         failure {
             slackSend(
                 channel: '#stackjenkins',
-                color: 'danger',
-                message: "Terraform deployment failed by RCLAYE. Job: ${env.JOB_NAME}, Build: #${env.BUILD_NUMBER}. Check logs for details."
+                color: '#E74C3C',
+                message: """❌ *TERRAFORM FAILURE* ❌
+👨‍💻 Engineer: *RCLAYE*
+📋 Job: ${env.JOB_NAME} [${env.BUILD_NUMBER}]
+🕐 Time: ${new Date().format("HH:mm:ss")}
+⚠️ Status: *Failed*
+🛠️ *Check logs for details*"""
             )
             echo "Deployment failed. Check logs."
         }
@@ -120,14 +146,22 @@ pipeline {
                 if (currentBuild.currentResult == 'SUCCESS' && env.STAGE_NAME == 'Terraform Destroy') {
                     slackSend(
                         channel: '#stackjenkins',
-                        color: 'good',
-                        message: "Terraform destroy completed successfully by RCLAYE. Job: ${env.JOB_NAME}, Build: #${env.BUILD_NUMBER}."
+                        color: '#9B59B6',
+                        message: """🗑️ *TERRAFORM DESTROY SUCCESS* 🗑️
+👨‍💻 Engineer: *RCLAYE*
+📋 Job: ${env.JOB_NAME} [${env.BUILD_NUMBER}]
+🕐 Time: ${new Date().format("HH:mm:ss")}
+🏁 Status: *Infrastructure Removed*"""
                     )
                 } else if (currentBuild.currentResult == 'FAILURE' && env.STAGE_NAME == 'Terraform Destroy') {
                     slackSend(
                         channel: '#stackjenkins',
-                        color: 'danger',
-                        message: "Terraform destroy failed by RCLAYE. Job: ${env.JOB_NAME}, Build: #${env.BUILD_NUMBER}."
+                        color: '#C0392B',
+                        message: """⛔ *TERRAFORM DESTROY FAILED* ⛔
+👨‍💻 Engineer: *RCLAYE*
+📋 Job: ${env.JOB_NAME} [${env.BUILD_NUMBER}]
+🕐 Time: ${new Date().format("HH:mm:ss")}
+⚠️ Status: *Failed to remove infrastructure*"""
                     )
                 }
             }
@@ -136,10 +170,5 @@ pipeline {
 }
 
 def getTerraformPath() {
-    // Try to use the named terraform tool, or fall back to the system path
-    try {
-        return tool(name: 'terraform-14', type: 'terraform')  // Changed back to match your configured tool name
-    } catch (Exception e) {
-        return "/usr/local/bin"
-    }
+    return tool(name: 'terraform-14', type: 'terraform')
 }
